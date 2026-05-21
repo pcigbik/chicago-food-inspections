@@ -5,7 +5,7 @@ Predicting food inspection pass rates in Chicago using historical risk classific
 **By Precious C. Igbiki**
 Data Science Research Program (DSRP) 2024, The Coding School and Columbia University
 
-📄 **[Read the full report](https://pcigbik.github.io/chicago-food-inspections/Final_Report.html)** · 🎞️ **[View the presentation](docs/DRSP_Final_Presantation.pdf)**
+📄 **[Read the full report](https://pcigbik.github.io/chicago-food-inspections/Final_Report.html)** · 🎞️ **[View the presentation](docs/Final_Presantation.pdf)**
 
 ---
 
