@@ -1,0 +1,273 @@
+---
+title: "How Past Risk Levels and Pass Rates Can be Used to Predict Future Results"
+subtitle: "Would a Local Chicago Facility Pass a Food Inspection?"
+author: "Precious C. Igbiki"
+date: "August 2024"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    code-fold: true
+    code-tools: true
+    theme: cosmo
+    embed-resources: true
+    fig-align: center
+execute:
+  warning: false
+  message: false
+  echo: true
+---
+
+### Abstract
+
+This research project looked at how can previous inspection results and risk levels determine the future results for businesses in the Daycare, Restaurant, Bar, and School sectors? Diving deep into this question can help the food service industry, and any facility susceptible to food inspections, to be aware of how their business practices are affecting the results of their food inspections and by extension their reputation in the community. Going into this project, a hypothesis was made that the past risk levels are a likely determiner of future risk levels. After the creation of a Linear Regression Model as well as a Chi-Square Test, future results were found to be without a doubt dependent on past risk levels and a strong linear correlation was found between past risk levels and present results. Meaning that no matter the change and development a facility can go through, the past risk levels that was assigned to them can continue to affect their current food inspection results. Going to show the importance of maintaining a high standard of food safety from the start.
+
+### Background
+
+In 2022 alone the city of Chicago issued over 6,100 new business licenses. In the same year the percentage of businesses that renewed their license was 84.6% (Chicago Business Bulletin *Year in Review*). Meaning businesses aren't just starting around the city but also continuing to grow and become apart of the community around them. The Centers for Disease Control and Prevention (CDC) estimates that 1 in 6 Americans will be hospitalized yearly do to food borne illnesses (CDC *Estimates of foodborne illness in the United States*). Considering these truths together it is understandable that a city as large as Chicago, which boasts over 2 million people and thousands of restaurants, want to maintain high standards for any facility that serves food.
+
+For this project the data used is collected from the city of Chicago and is updated on a monthly basis. The research question being looked into is, how can previous inspection results and risk levels determine the future results for businesses in the Daycare, Restaurant, Bar, and School sectors? Before analysis was conducted the hypothesis that previous inspection rates have a significant implication on future results was presumed.
+
+### Results
+
+First to see which facility type would have the most Inspections classified as Risk 1, Risk 2 or Risk 3 graphs that look at specific risks as the primary filter were formed. I quickly realized that restaurants show the largest count of all 4 facility types and because of I knew that whenever I compared different kinds of facilities I had to use proportions
+
+```{r setup}
+#| include: false
+
+# Load required libraries
+library(dplyr)
+library(janitor)
+library(ggplot2)
+library(tidyr)
+library(stringr)
+library(readr)
+library(stats)
+library(caTools)
+
+# Source the cleaning and graphing scripts so csf_select and
+# combine_data_risk_pass are available for the chunks below.
+source("R/dataCleaning.R")
+source("R/Graphs.R")
+```
+
+```{r}
+#| label: fig-risk1-prevalence
+#| fig-cap: "Prevalence of Risk 1 (High) inspections across the four facility types."
+
+#Risk 1
+csf_select %>% 
+  filter(Risk == 'Risk 1 (High)') %>%
+  ggplot(aes(Facility_Type, fill = Facility_Type)) +
+  geom_bar() +
+  labs(title = "Prevalenace of Risk 1 In Specfic Facilities",
+       x = 'Facility Type',
+       y = 'Count')
+```
+
+```{r}
+#| label: fig-risk2-prevalence
+#| fig-cap: "Prevalence of Risk 2 (Medium) inspections across the four facility types."
+
+#Risk #2
+csf_select %>% 
+  filter(Risk == 'Risk 2 (Medium)') %>%
+  ggplot(aes(Facility_Type, fill = Facility_Type)) +
+  geom_bar() +
+  labs(title = "Prevalenace of Risk 2 In Specfic Facilities",
+       x = 'Facility Type',
+       y = 'Count')
+```
+
+```{r}
+#| label: fig-risk3-prevalence
+#| fig-cap: "Prevalence of Risk 3 (Low) inspections across the four facility types."
+
+#Risk #3
+csf_select %>% 
+  filter(Risk == 'Risk 3 (Low)') %>%
+  ggplot(aes(Facility_Type, fill = Facility_Type)) +
+  geom_bar() +
+  labs(title = "Prevalenace of Risk 3 In Specfic Facilities",
+       x = 'Facility Type',
+       y = 'Count')
+```
+
+Looking across Figures 1, 2 and 3, restaurants take up the overwhelming majority of every risk classification, with Risk 1 alone showing over 35,000 inspections for restaurants compared to a few thousand for schools and daycares and almost none for bars. The pattern flips a bit at Risk 3, where bars suddenly show up in larger numbers and daycares almost dissapear. This made it clear that any meaningful comparison between facility types had to be done using rates and proportions rather than raw counts, since the sheer volume of restaurant inspections would otherwise drown out everything else.
+
+#### Risk Levels Over Time
+
+To see how the distribution of risk levels has been shifting in facilities that actually passed their inspections, I broke the data out by year for daycares and restaurants from 2010 to 2024.
+
+```{r}
+#| label: fig-daycare-risk-time
+#| fig-cap: "Risk levels in daycares that passed inspections, 2010 to 2024."
+
+# Daycare risk levels throughout the years
+csf_select %>% 
+  filter(Facility_Type == 'Daycare', Results %in% c('Pass', 'Pass w/ Conditions')) %>%
+  ggplot(aes(x = Year, fill = Risk)) +
+  geom_bar() + 
+  labs(title = "Risk Levels in Daycares That Passed Inspections 2010 - 2024",
+       x = "Year",
+       y = "Count") +
+  scale_fill_manual("Risk Levels", 
+                    values = c("Risk 1 (High)" = "#C70039", 
+                               "Risk 2 (Medium)" = "#f8f968", 
+                               "Risk 3 (Low)" = "#a3f968"))
+```
+
+```{r}
+#| label: fig-restaurant-risk-time
+#| fig-cap: "Risk levels in restaurants that passed inspections, 2010 to 2024."
+
+# Restaurants risk levels throughout the years
+csf_select %>% 
+  filter(Facility_Type == 'Restaurant', Results %in% c('Pass', 'Pass w/ Conditions')) %>%
+  ggplot(aes(x = Year, fill = Risk)) +
+  geom_bar() + 
+  labs(title = "Risk Levels in Restaurants That Passed Inspections 2010 - 2024",
+       x = "Year",
+       y = "Count") +
+  scale_fill_manual("Risk Levels", 
+                    values = c("Risk 1 (High)" = "#C70039", 
+                               "Risk 2 (Medium)" = "#f8f968", 
+                               "Risk 3 (Low)" = "#a3f968"))
+```
+
+The difference between these two facility types is striking. Daycares that pass their inspections are almost entirely classified as Risk 1 every single year, meaning daycares are consistently treated as high risk by inspectors regardless of how they actually performed. Restaurants on the other hand show a much more mixed distribution, with Risk 3 making up a noticeable share of passing inspections especially in the earlier years. This is one of the first signals that different facility types are being held to different baselines, which becomes important context for everything that follows.
+
+#### Correlation Between Risk Rates and Pass Rates
+
+To check whether the rate of any particular risk classification is connected to the overall pass rate of a facility type, I computed yearly rates for Risk 1, Risk 2, and Risk 3, and plotted them against the pass rate.
+
+```{r}
+#| label: fig-school-risk1-passrate
+#| fig-cap: "Risk 1 Rate vs. Overall Pass Rate in Schools, 2010 to 2024."
+
+# School: Risk 1 Rate vs Pass Rate
+combine_data_risk_pass %>% 
+  filter(Facility_Type == 'School') %>% 
+  ggplot(aes(x = Risk_One_Rate, y = Pass_Rate, color = Year)) +
+  geom_point() + 
+  labs(title = "Risk 1 Rate vs Overall Pass Rate in Schools from 2010 - 2024",
+       x = 'Risk One Rate', 
+       y = 'Pass Rate')
+```
+
+```{r}
+#| label: fig-bar-risk3-passrate
+#| fig-cap: "Risk 3 Rate vs. Overall Pass Rate in Bars, 2010 to 2024."
+
+# Bar: Risk 3 Rate vs Pass Rate
+combine_data_risk_pass %>% 
+  filter(Facility_Type == 'Bar') %>% 
+  ggplot(aes(x = Risk_Three_Rate, y = Pass_Rate, color = Year)) +
+  geom_point() + 
+  labs(title = "Risk 3 Rate vs Overall Pass Rate in Bars from 2010 - 2024",
+       x = 'Risk Three Rate', 
+       y = 'Pass Rate')
+```
+
+For schools, the pass rate sits consistently above 0.90 across the entire range of Risk 1 rates, suggesting schools maintain a high pass rate even when a large share of their inspections are classified as high risk. For bars, the pass rate is far more spread out, ranging from around 0.80 all the way up to 1.00, and there is a slight upward trend as the Risk 3 rate increases. Meaning bars that get classified as low risk more often are also the ones that tend to pass at higher rates, which lines up with intuition but is not as clean of a relationship as I expected going in.
+
+#### Predicting Pass Rate with a Linear Regression Model
+
+To formally test whether past risk classifications can predict pass rates, a Linear Regression Model was built using Risk 1 Rate, Risk 2 Rate, Risk 3 Rate, Year, and Facility Type as the predictors. The data was first split 80:20 into training and testing sets, and then the same model was evaluated against the full dataset.
+
+```{r}
+#| label: fig-linear-model
+#| fig-cap: "Predicted vs. true pass rates from the linear regression model, colored by facility type."
+
+#splitting the data 80:20 for Testing and Training Data
+set.seed(123)
+split <- sample.split(combine_data_risk_pass$Pass_Rate, SplitRatio = 0.8)
+train_data <- subset(combine_data_risk_pass, split == TRUE)
+test_data <- subset(combine_data_risk_pass, split == FALSE)
+
+# Training a Linear model
+lr_model <- lm(Pass_Rate ~ Risk_One_Rate + Risk_Two_Rate + Risk_Three_Rate + Year + Facility_Type, 
+               data = train_data)
+
+# Predicting on the test data
+pred <- predict(lr_model, newdata = test_data)
+test_data$pred <- pred
+
+# Plotting the results
+ggplot(test_data, aes(x = Pass_Rate, y = pred, color = Facility_Type)) +
+  geom_point() +
+  labs(title = "Real vs Predicted Values",
+       x = "True Pass Rate",
+       y = "Predicted Pass Rate")
+```
+
+```{r}
+#| label: model-metrics
+
+# Mean Absolute Error
+mae <- mean(abs(test_data$Pass_Rate - pred), na.rm = TRUE)
+
+# R-squared from the 80:20 trained model
+r_sqr <- summary(lr_model)$r.squared
+
+# Evaluating on the entire dataset
+pred_all_data <- predict(lr_model, newdata = combine_data_risk_pass)
+mae_all <- mean(abs(combine_data_risk_pass$Pass_Rate - pred_all_data), na.rm = TRUE)
+r_sqr_all <- summary(lm(Pass_Rate ~ Risk_One_Rate + Risk_Two_Rate + Risk_Three_Rate + Year + Facility_Type, 
+                        data = combine_data_risk_pass))$r.squared
+
+cat("80:20 Model\n",
+    "  R-squared: ", round(r_sqr, 4), "\n",
+    "  MAE:       ", round(mae, 4), "\n\n",
+    "Entire Dataset\n",
+    "  R-squared: ", round(r_sqr_all, 4), "\n",
+    "  MAE:       ", round(mae_all, 4), "\n",
+    sep = "")
+```
+
+The 80:20 model returned an R-squared of about 0.7999 and a Mean Absolute Error of about 0.037, while the model evaluated against the entire dataset returned an R-squared of about 0.7921 and a MAE of about 0.0825. Meaning roughly 79 to 80 percent of the variation in pass rates can be explained by the combination of past risk rates, year, and facility type alone. The MAE on the 80:20 split being so low also tells us that on the held out test data the predicted pass rates were off from the true pass rates by less than 4 percentage points on average, which is a strong result for a model this simple.
+
+Looking at the scatter of predicted vs true pass rates, the four facility types clearly seperate into their own clusters. Schools sit in the upper right with the highest pass rates, daycares and restaurants overlap in the middle, and bars sit on their own in the lower left with the lowest pass rates. Going to show that the model is picking up on real, consistent differences between how each facility type performs.
+
+#### Chi-Square Test for Independence
+
+The linear model tells us about the strength of a relationship but to confirm that risk classification and inspection result are not independent of one another a Chi-Square Test of Independence was run on the full filtered dataset.
+
+```{r}
+#| label: chi-square
+
+# Chi-Square Test of Independence between Risk and Results
+chi_result <- chisq.test(csf_select$Risk, csf_select$Results, correct = FALSE)
+chi_result
+```
+
+The test returned an X-squared value of 636.45 on 18 degrees of freedom with a p-value of less than 2.2e-16. Meaning the probability of seeing a relationship this strong by random chance alone is effectively zero. We can therefore reject the null hypothesis that risk and inspection results are independent, and confirm that a facility's risk classification is meaningfully tied to whether or not it will pass its inspection.
+
+### Discussion
+
+Pulling the linear model and the Chi-Square test together, the hypothesis I went into this project with held up. Past risk classifications and pass rates are strong predictors of future inspection results, and the relationship between risk and result is not something that can be explained away as coincidence.
+
+What was less expected, but came through clearly in the visualizations, is that different facility types are being held to different standards during their inspections. Schools and daycares maintain consistently high pass rates regardless of their underlying risk distribution, while bars sit at the lower end of the pass rate range even when their risk profile improves. Meaning it will always be easier for some facility types to pass then others, and a flat "would this facility pass" question has to be answered in the context of what kind of facility we are even asking about.
+
+The model also has clear room to grow. We can use past results to predict future pass rates, but the accuracy of these predictions will increase over time with more data being used to train the model and more factors that effect the pass rate being considered. Things like inspection type, location within the city, violation history, and time since the last inspection are all variables that could meaningfully sharpen the predictions in a future version of this work.
+
+Data driven insights in the food industry can revolutionize the sector when enough attention is given to maintaining high standards for our food.
+
+### Code and Data Availability
+
+To view my project you can access it here: [GitHub Repository](https://github.com/pcigbik)
+
+To look at the original data source you can access it here: [Chicago Food Inspection Data](https://data.cityofchicago.org/Health-Human-Services/Food-Inspections/4ijn-s7e5/about_data)
+
+Please note that this dataset is continuously being updated by the City of Chicago as more inspections data becomes available.
+
+### Acknowledgements
+
+I would like to acknowledge Shaunette Ferguson for mentoring througout this project, Pavithra Dasarakoppalu for helping me with all my technical issues as my TA, and The Coding School alongside Columbia University for giving me this opportunity to learn and grow in the field of Data Science.
+
+### Citations
+
+Government, United States. "Estimates of Foodborne Illness in the United States." *Centers for Disease Control and Prevention*, Centers for Disease Control and Prevention, 5 Nov. 2018, www.cdc.gov/foodborneburden/index.html.
+
+"Year in Review." *World Business Chicago*, Chicago Business Bulletin, worldbusinesschicago.com/app/uploads/2023/02/WBCResearch-Center_Year_In_Review_2023.pdf. Accessed 17 Aug. 2024.

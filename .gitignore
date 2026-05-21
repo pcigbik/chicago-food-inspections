@@ -1,0 +1,28 @@
+# R
+.Rhistory
+.Rapp.history
+.RData
+.RDataTmp
+.Ruserdata
+.Rproj.user/
+*.Rproj
+
+# Quarto
+.quarto/
+_freeze/
+_site/
+
+# Rendered files (uncomment the next line if you do NOT want to commit the HTML)
+# *.html
+
+# Raw data: too big for GitHub, must be downloaded locally
+data/Food_Inspections.csv
+data/violations.csv
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
